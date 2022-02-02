@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// ServeHTTP is the http handler function of LastTradeServer
 func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := c.stmt.Query()
@@ -20,20 +21,18 @@ func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		select {
-		case <-r.Context().Done(): // request canceled
+		case <-r.Context().Done():
+			// When the request is canceled there is no reason to continue.
 			return
 		default:
 			// go ahead!
 			var (
-				Name   string
-				DateEn time.Time
-				Open   float64
-				High   float64
-				Low    float64
-				close  float64
+				Name                   string
+				DateEn                 time.Time
+				Open, High, Low, Close float64
 			)
 
-			if err := rows.Scan(&Name, &DateEn, &Open, &High, &Low, &close); err != nil {
+			if err := rows.Scan(&Name, &DateEn, &Open, &High, &Low, &Close); err != nil {
 				log.Panicln(err)
 			}
 
@@ -44,6 +43,7 @@ func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Open:   Open,
 					High:   High,
 					Low:    Low,
+					Close:  Close,
 				},
 			)
 		}
@@ -57,7 +57,8 @@ func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewLastTradeServer(db *sql.DB) *LastTradeServer {
+//NewLastTradeServer creates a new LastTradeServer instance.
+func NewLastTradeServer(db *sql.DB) (*LastTradeServer, error) {
 	stmt, err := db.Prepare(`
 	select name, DateEn, open, high, low, close
 	from Instrument
@@ -67,10 +68,10 @@ func NewLastTradeServer(db *sql.DB) *LastTradeServer {
 	on Instrument.id=t.instrumentid
 	`)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &LastTradeServer{
 		stmt: stmt,
-	}
+	}, nil
 }

@@ -17,13 +17,16 @@ const (
 	DB_PASSWORD = "123456"
 	DB_NAME     = "ktest"
 
-	Route = "/last-trade/"
-	Port  = 8000
+	route = "/last-trade"
+	port  = 8000
 )
 
 func main() {
 
-	//setup db
+	// setup log
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	// setup db
 	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
 	db, err := sql.Open("postgres", dbinfo)
 	if err != nil {
@@ -31,10 +34,20 @@ func main() {
 	}
 	defer db.Close()
 
+	// create a handler intrface
+	ca, err := challenge.NewLastTradeServer(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// create a router instace
 	router := mux.NewRouter()
-	ca := challenge.NewLastTradeServer(db)
-	router.Handle(Route, ca)
-	fmt.Printf("Serve at %d port\n", Port)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Port), router))
+
+	//setup the router
+	router.Handle(route, ca)
+
+	//serve
+	fmt.Printf("Serve at port %d\n", port)
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), router))
 
 }

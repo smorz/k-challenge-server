@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// LastTradeServer is a handler interface that serves
+// simply a list of the last trades of instruments
 type LastTradeServer struct {
 	stmt *sql.Stmt
 }
