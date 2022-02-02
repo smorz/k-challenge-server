@@ -11,14 +11,13 @@ import (
 // ServeHTTP is the http handler function of LastTradeServer
 func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := c.stmt.Query()
+	rows, err := c.stmt.QueryContext(r.Context())
 	if err != nil {
 		log.Panicln(err)
 	}
-	var (
-		result []ResultRow
-	)
 
+	var result []ResultRow
+	//rows.NextResultSet()
 	for rows.Next() {
 		select {
 		case <-r.Context().Done():
@@ -49,7 +48,7 @@ func (c *LastTradeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var response = JsonResponse{OK: true, Result: result}
+	response := JsonResponse{OK: true, Result: result}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -66,6 +65,7 @@ func NewLastTradeServer(db *sql.DB) (*LastTradeServer, error) {
 					from trade
 					order by instrumentid, dateen desc) t
 	on Instrument.id=t.instrumentid
+	where t.instrumentid is not null
 	`)
 	if err != nil {
 		return nil, err

@@ -1,3 +1,5 @@
+// Please set the database constants in this file before running.
+
 package main
 
 import (
