@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-type LastTrade struct {
-	db   *sql.DB
+type LastTradeServer struct {
 	stmt *sql.Stmt
 }
 
